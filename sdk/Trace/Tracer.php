@@ -218,9 +218,9 @@ class Tracer implements API\Tracer
      */
     public function startAndActivateSpan(string $name, int $spanKind = API\SpanKind::KIND_INTERNAL): API\Span
     {
-        $parentContext = $this->getActiveSpan()->getContext();
-
-        return self::startActiveSpan($name, $parentContext, false, $spanKind);
+        $span = $this->startSpan($name, null, $spanKind);
+        $this->setActiveSpan($span);
+        return $span;
     }
 
     public function getSpans(): array
