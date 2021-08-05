@@ -12,6 +12,7 @@ use OpenTelemetry\Sdk\Trace\Sampler;
 use OpenTelemetry\Sdk\Trace\SamplingResult;
 use OpenTelemetry\Sdk\Trace\Span;
 use OpenTelemetry\Sdk\Trace\SpanContext;
+use OpenTelemetry\Sdk\Trace\TraceState as TraceTraceState;
 use OpenTelemetry\Trace as API;
 use OpenTelemetry\Trace\TraceState;
 
@@ -58,22 +59,19 @@ class TraceIdRatioBasedSamplerWithRatioAttribute implements Sampler
         ?API\Links $links = null
     ): SamplingResult {
         error_log('Span name ----------------------------: ' . var_export($spanName, true));
-        error_log('Parent context: ' . var_export($parentContext, true));
         $attributes = $attributes ?: new Attributes();
-        $attributes->setAttribute("_sample_rate", $this->probability);
 
         // TODO: Add config to adjust which spans get sampled (only default from specification is implemented)
         $parentSpan = Span::extract($parentContext);
         $parentSpanContext = $parentSpan !== null ? $parentSpan->getContext() : SpanContext::getInvalid();
-        $traceState = $parentSpanContext->getTraceState();
-        // error_log('Trace state: ' . var_export($traceState, true));
-        // error_log('Attributes before: ' . var_export($attributes, true));
-        // error_log('Attributes after : ' . var_export($attributes, true));
-        // Merging attributes from state, which have priority over provided arguments.
-        if ($traceState) {
-            foreach ($this->getAttributesFromState($traceState) as $attribute) {
-                $attributes->setAttribute($attribute->getKey(), $attribute->getValue());
-            }
+        $traceState = $parentSpanContext->getTraceState() ?: new TraceTraceState();
+        $sampleRateFromState = $this->getSampleRateFromState($traceState);
+
+        if ($sampleRateFromState !== null) {
+            $attributes->setAttribute(self::SAMPLE_RATE_KEY, $sampleRateFromState);
+        } else {
+            $attributes->setAttribute(self::SAMPLE_RATE_KEY, $this->probability);
+            $traceState = $traceState->with(self::TRACESTATE_KEY, (string)$this->probability);
         }
 
         $samplingDecision = $this->makeDecision($traceId);
@@ -102,13 +100,17 @@ class TraceIdRatioBasedSamplerWithRatioAttribute implements Sampler
         return $traceIdCondition ? SamplingResult::RECORD_AND_SAMPLE : SamplingResult::DROP;
     }
 
-    private function getAttributesFromState(TraceState $traceState): API\Attributes
+    private function getSampleRateFromState(TraceState $traceState): ?float
     {
         $ddState = $traceState->get(self::TRACESTATE_KEY);
         if ($ddState === null || $ddState === "" || strpos($ddState, '|') !== false) {
-            return new Attributes();
+            return null;
         }
 
-        return new Attributes([self::SAMPLE_RATE_KEY => $ddState]);
+        if (!\is_float($ddState)) {
+            return null;
+        }
+
+        return (float)$ddState;
     }
 }
