@@ -109,9 +109,9 @@ final class SpanContext implements API\SpanContext
      * @param bool $isRemote Default: false
      * @return SpanContext
      */
-    public static function fork(string $traceId, bool $sampled = false, bool $isRemote = false): SpanContext
+    public static function fork(string $traceId, bool $sampled = false, bool $isRemote = false, ?API\TraceState $traceState = null): SpanContext
     {
-        return self::restore($traceId, self::randomHex(self::SPAN_LENGTH_BYTES), $sampled, $isRemote);
+        return self::restore($traceId, self::randomHex(self::SPAN_LENGTH_BYTES), $sampled, $isRemote, $traceState);
     }
 
     /**
