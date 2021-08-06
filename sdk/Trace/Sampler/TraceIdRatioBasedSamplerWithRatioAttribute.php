@@ -58,7 +58,6 @@ class TraceIdRatioBasedSamplerWithRatioAttribute implements Sampler
         ?API\Attributes $attributes = null,
         ?API\Links $links = null
     ): SamplingResult {
-        error_log('Span name ----------------------------: ' . var_export($spanName, true));
         $attributes = $attributes ?: new Attributes();
 
         // TODO: Add config to adjust which spans get sampled (only default from specification is implemented)
