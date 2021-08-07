@@ -136,7 +136,7 @@ class Tracer implements API\Tracer
             $spanKind
         );
 
-        $context = SpanContext::fork($parentContext->getTraceId(), $parentContext->isSampled(), $isRemote, $samplingResult->getTraceState());
+        $context = SpanContext::fork($parentContext->getTraceId(), $samplingResult->getDecision() === SamplingResult::RECORD_AND_SAMPLE, $isRemote, $samplingResult->getTraceState());
 
         if (SamplingResult::DROP == $samplingResult->getDecision()) {
             $span = $this->generateSpanInstance('', $context);

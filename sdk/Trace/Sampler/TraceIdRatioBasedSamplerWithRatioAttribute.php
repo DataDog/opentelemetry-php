@@ -106,7 +106,7 @@ class TraceIdRatioBasedSamplerWithRatioAttribute implements Sampler
             return null;
         }
 
-        if (!\is_float($ddState)) {
+        if (!\is_numeric($ddState)) {
             return null;
         }
 
